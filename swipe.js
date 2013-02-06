@@ -75,13 +75,12 @@ Swipe.prototype = {
     // hide slider element but keep positioning during setup
     var origVisibility = this.container.style.visibility;
     this.container.style.visibility = 'hidden';
-
+      
     // dynamic css
-    this.element.style.width = Math.ceil(this.slides.length * this.width) + 'px';
+    this.element.style.width = Math.ceil(this.getTotalSlideWidth()) + 'px';
     var index = this.slides.length;
     while (index--) {
       var el = this.slides[index];
-      el.style.width = this.width + 'px';
       el.style.display = 'table-cell';
       el.style.verticalAlign = 'top';
     }
@@ -107,12 +106,27 @@ Swipe.prototype = {
     style.webkitTransitionDuration = style.MozTransitionDuration = style.msTransitionDuration = style.OTransitionDuration = style.transitionDuration = duration + 'ms';
 
     // translate to given index position
-    style.MozTransform = style.webkitTransform = 'translate3d(' + -(index * this.width) + 'px,0,0)';
-    style.msTransform = style.OTransform = 'translateX(' + -(index * this.width) + 'px)';
+    var maxWidth = this.getTotalSlideWidth() - window.innerWidth;
+    var totalSlideWidth = Math.min(this.getTotalSlideWidth(index), maxWidth);
+    style.MozTransform = style.webkitTransform = 'translate3d(' + -(totalSlideWidth) + 'px,0,0)';
+    style.msTransform = style.OTransform = 'translateX(' + -(totalSlideWidth) + 'px)';
 
     // set new index to allow for expression arguments
     this.index = index;
 
+  },
+  
+  getTotalSlideWidth: function (numSlides) {
+      if (numSlides === undefined) numSlides = this.slides.length;
+      var totalWidth = 0;
+      for (var i = 0; i < numSlides; i++) {
+          totalWidth += this.getWidth(this.slides[i]);
+      }
+      return totalWidth;
+  },
+  
+  getWidth: function(el) {
+      return el.offsetWidth;
   },
 
   getPos: function() {
@@ -241,11 +255,11 @@ Swipe.prototype = {
             || this.index == this.length - 1              // or if last slide and sliding right
             && this.deltaX < 0                            // and if sliding at all
           ) ?                      
-          ( Math.abs(this.deltaX) / this.width + 1 )      // determine resistance level
+          ( Math.abs(this.deltaX) / this.getWidth(this.slides[this.index]) + 1 )      // determine resistance level
           : 1 );                                          // no resistance if false
       
       // translate immediately 1-to-1
-      this.element.style.MozTransform = this.element.style.webkitTransform = 'translate3d(' + (this.deltaX - this.index * this.width) + 'px,0,0)';
+      this.element.style.MozTransform = this.element.style.webkitTransform = 'translate3d(' + (this.deltaX - this.getTotalSlideWidth(this.index)) + 'px,0,0)';
       
       e.stopPropagation();
     }
